@@ -16,8 +16,17 @@ def load_image(addr):
     img=cv2.imread(addr)
     if img is None:
         return None
-    img = cv2.resize(img, (224,224), interpolation=cv2.INTER_CUBIC)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    #resize the image to 256x256
+    img = cv2.resize(img, (256,256), interpolation=cv2.INTER_CUBIC)
+    #crop the image 227x227
+    img = img[29:256, 29:256]
+
+    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+#Check if images are getting read properly
+    #cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+    #cv2.imshow('image', img)
+    #cv2.waitKey(200)
+    #cv2.destroyAllWindows()
     return img
 
 
@@ -28,7 +37,7 @@ def createDataRecord(out_filename, addrs, labels):
     for i in range(len(addrs)):
 
         # print how many images are saved every 1000 images
-        if not i % 1000:
+        if not i % 1:
             print('Train data: {}/{}'.format(i, len(addrs)))
             sys.stdout.flush()
         # Load the image
@@ -37,7 +46,7 @@ def createDataRecord(out_filename, addrs, labels):
         label = labels[i]
 
         if img is None:
-            continue
+            break
 
         # Create a feature
         feature = {
@@ -55,10 +64,22 @@ def createDataRecord(out_filename, addrs, labels):
 
 
 face_data = 'C:/Users/akshay1/Desktop/Books/CV Project/dataset_2/aligned/*/*.jpg'
-# read addresses and labels from the 'train' folder
+# read addresses and labels from the 'train1' folder
 addrs = glob.glob(face_data)
-labels = [0 if '20' in addr else 1 for addr in addrs]  # 0 = Cat, 1 = Dog
-print(len(addrs))
+labels = [0 if '20' in addr else 1 for addr in addrs]
+
+#read labels from text file
+labels_file_fold0 = open("dataset_2/fold_0_data.txt", "r")
+labels_file_fold1 = open("dataset_2/fold_1_data.txt", "r")
+labels_file_fold2 = open("dataset_2/fold_2_data.txt", "r")
+labels_file_fold3 = open("dataset_2/fold_3_data.txt", "r")
+labels_file_fold4 = open("dataset_2/fold_4_data.txt", "r")
+
+print(labels_file_fold4.read(0))
+
+#for i in range(len(addrs)):
+#    print(addrs[i])
+
 # to shuffle data
 #c = list(zip(addrs, labels))
 #shuffle(c)
@@ -72,6 +93,6 @@ val_labels = labels[int(0.6 * len(addrs)):int(0.8 * len(addrs))]
 test_addrs = addrs[int(0.8 * len(addrs)):]
 test_labels = labels[int(0.8 * len(labels)):]
 
-createDataRecord('train.tfrecords', train_addrs, train_labels)
-createDataRecord('val.tfrecords', val_addrs, val_labels)
-createDataRecord('test.tfrecords', test_addrs, test_labels)
+#createDataRecord('train.tfrecords', train_addrs, train_labels)
+#createDataRecord('val.tfrecords', val_addrs, val_labels)
+#createDataRecord('test.tfrecords', test_addrs, test_labels)
