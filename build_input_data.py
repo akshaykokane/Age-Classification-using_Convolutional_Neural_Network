@@ -57,7 +57,7 @@ def createDataRecord(out_filename, addrs, labels):
 face_data = 'C:/Users/akshay1/Desktop/Books/CV Project/dataset_2/aligned/*/*.jpg'
 # read addresses and labels from the 'train' folder
 addrs = glob.glob(face_data)
-labels = [0 if 'Cat' in addr else 1 for addr in addrs]  # 0 = Cat, 1 = Dog
+labels = [0 if '20' in addr else 1 for addr in addrs]  # 0 = Cat, 1 = Dog
 print(len(addrs))
 # to shuffle data
 #c = list(zip(addrs, labels))
