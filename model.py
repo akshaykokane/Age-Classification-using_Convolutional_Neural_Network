@@ -65,17 +65,18 @@ def val_input_fn():
 def cnn_model_fn(features, labels, mode, params):
     print(labels)
     input_layer = tf.reshape(features["image"], [-1, 227, 227, 3])
-    num_classes=8
+    num_classes = 9
+    #0 - Unknown
     print("Here1")
     #Layer 1
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
         filters=96,
         kernel_size=[7, 7],
-        padding="same",
+        padding="VALID",
         activation=tf.nn.relu)
 
-    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2,padding="VALID")
     norm1 = tf.nn.local_response_normalization(pool1, 5, alpha=0.0001, beta=0.75, name='norm1')
     print(norm1)
     # Layer 2
@@ -91,14 +92,14 @@ def cnn_model_fn(features, labels, mode, params):
     # Layer 3
     conv3 = tf.layers.conv2d(
         inputs=norm2,
-        filters=384,
+        filters=64,
         kernel_size=[3, 3],
         padding="same",
         activation=tf.nn.relu)
     pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
     norm3 = tf.nn.local_response_normalization(pool3, 5, alpha=0.0001, beta=0.75, name='norm3')
     print(norm3)
-    pool3_flat=tf.reshape(norm3, [-1, 50176])
+    pool3_flat=tf.reshape(norm3, [-1, 27*27*64])
 
     # Dense Layer - 1
     dense1 = tf.layers.dense(inputs=pool3_flat, units=1024, name="layer1")
@@ -117,7 +118,7 @@ def cnn_model_fn(features, labels, mode, params):
     # Logits layer
     # Input Tensor Shape: [batch_size, 1024]
     # Output Tensor Shape: [batch_size, 10]
-    logits = tf.layers.dense(inputs=dropout2, units=8)
+    logits = tf.layers.dense(inputs=dropout2, units=9)
 
     predictions = {
         # Generate predictions (for PREDICT and EVAL mode)
@@ -150,7 +151,7 @@ def cnn_model_fn(features, labels, mode, params):
 
 # Create the Estimator
 age_classifier = tf.estimator.Estimator(
-      model_fn=cnn_model_fn, model_dir="/model/mod3")
+      model_fn=cnn_model_fn, model_dir="/tmp/age_mode3")
 
 
 # Set up logging for predictions
@@ -160,8 +161,8 @@ logging_hook = tf.train.LoggingTensorHook(
     tensors=tensors_to_log, every_n_iter=50)
 
 count = 0
-while (count < 1):
-    age_classifier.train(input_fn=train_input_fn, steps=1000)
+while (count < 10000):
+    age_classifier.train(input_fn=train_input_fn, steps=10000)
     result = age_classifier.evaluate(input_fn=val_input_fn)
     print(result)
     print("Classification accuracy: {0:.2%}".format(result["accuracy"]))
