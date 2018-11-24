@@ -63,8 +63,10 @@ def val_input_fn():
 
 
 def cnn_model_fn(features, labels, mode, params):
+    print(labels)
     input_layer = tf.reshape(features["image"], [-1, 227, 227, 3])
-    input_layer = tf.identity(input_layer, name="input_tensor")
+    num_classes=8
+    print("Here1")
     #Layer 1
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
@@ -72,41 +74,50 @@ def cnn_model_fn(features, labels, mode, params):
         kernel_size=[7, 7],
         padding="same",
         activation=tf.nn.relu)
-    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[3, 3], strides=2)
 
+    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+    norm1 = tf.nn.local_response_normalization(pool1, 5, alpha=0.0001, beta=0.75, name='norm1')
+    print(norm1)
     # Layer 2
     conv2 = tf.layers.conv2d(
-        inputs=pool1,
+        inputs=norm1,
         filters=256,
         kernel_size=[5, 5],
         padding="same",
         activation=tf.nn.relu)
-    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[3, 3], strides=2)
-
+    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+    norm2 = tf.nn.local_response_normalization(pool2, 5, alpha=0.0001, beta=0.75, name='norm2')
+    print(norm2)
     # Layer 3
     conv3 = tf.layers.conv2d(
-        inputs=pool2,
+        inputs=norm2,
         filters=384,
         kernel_size=[3, 3],
         padding="same",
         activation=tf.nn.relu)
-    pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[3, 3], strides=2)
-
-    pool3_flat=tf.reshape(pool2, [-1, 14 * 14 * 256])
+    pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
+    norm3 = tf.nn.local_response_normalization(pool3, 5, alpha=0.0001, beta=0.75, name='norm3')
+    print(norm3)
+    pool3_flat=tf.reshape(norm3, [-1, 50176])
 
     # Dense Layer - 1
-    dense1 = tf.layers.dense(inputs=pool3_flat, units=512, activation=tf.nn.relu)
+    dense1 = tf.layers.dense(inputs=pool3_flat, units=1024, name="layer1")
 
     # DropOut - 1
     dropout1 = tf.layers.dropout(
         inputs=dense1, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
 
+    # Dense Layer - 2
+    dense2 = tf.layers.dense(inputs=dropout1, units=num_classes, name="layer2")
 
+    # DropOut - 2
+    dropout2 = tf.layers.dropout(
+        inputs=dense2, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
 
     # Logits layer
     # Input Tensor Shape: [batch_size, 1024]
     # Output Tensor Shape: [batch_size, 10]
-    logits = tf.layers.dense(inputs=dropout1, units=8)
+    logits = tf.layers.dense(inputs=dropout2, units=8)
 
     predictions = {
         # Generate predictions (for PREDICT and EVAL mode)
@@ -117,7 +128,7 @@ def cnn_model_fn(features, labels, mode, params):
     }
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
-
+    print("Here2")
     # Calculate Loss (for both TRAIN and EVAL modes)
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
@@ -139,7 +150,7 @@ def cnn_model_fn(features, labels, mode, params):
 
 # Create the Estimator
 age_classifier = tf.estimator.Estimator(
-      model_fn=cnn_model_fn, model_dir="/tmp/age_convnet_model")
+      model_fn=cnn_model_fn, model_dir="/model/mod3")
 
 
 # Set up logging for predictions
