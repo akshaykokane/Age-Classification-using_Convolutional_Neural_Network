@@ -72,61 +72,61 @@ def cnn_model_fn(features, labels, mode, params):
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
         filters=96,
+        strides=(4,4),
         kernel_size=[7, 7],
-        padding="VALID",
+        padding="same",
         activation=tf.nn.relu)
 
-    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2,padding="VALID")
+    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[3, 3], strides=[2,2] ,padding="Valid")
     norm1 = tf.nn.local_response_normalization(pool1, 5, alpha=0.0001, beta=0.75, name='norm1')
     print(norm1)
     # Layer 2
     conv2 = tf.layers.conv2d(
         inputs=norm1,
         filters=256,
+        strides=(1, 1),
         kernel_size=[5, 5],
         padding="same",
         activation=tf.nn.relu)
-    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
-    norm2 = tf.nn.local_response_normalization(pool2, 5, alpha=0.0001, beta=0.75, name='norm2')
+    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[3, 3], strides=2, padding="same")
+    norm2 = tf.nn.local_response_normalization(pool2, alpha=0.0001, beta=0.75, name='norm2')
     print(norm2)
     # Layer 3
     conv3 = tf.layers.conv2d(
         inputs=norm2,
-        filters=64,
+        filters=384,
+        strides=(1, 1),
         kernel_size=[3, 3],
         padding="same",
         activation=tf.nn.relu)
-    pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
-    norm3 = tf.nn.local_response_normalization(pool3, 5, alpha=0.0001, beta=0.75, name='norm3')
+    pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[3, 3], strides=2, padding ="same")
+    norm3 = tf.nn.local_response_normalization(pool3,alpha=0.0001, beta=0.75, name='norm3')
     print(norm3)
-    pool3_flat=tf.reshape(norm3, [-1, 27*27*64])
+
+    pool3_flat=tf.reshape(norm3, [-1, 7*7*384])
 
     # Dense Layer - 1
-    dense1 = tf.layers.dense(inputs=pool3_flat, units=1024, name="layer1")
+    dense1 = tf.layers.dense(inputs=pool3_flat, units=512, name="layer1", activation=tf.nn.relu)
 
     # DropOut - 1
     dropout1 = tf.layers.dropout(
-        inputs=dense1, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
+        inputs=dense1, rate=0.5, training=mode == tf.estimator.ModeKeys.TRAIN)
 
     # Dense Layer - 2
-    dense2 = tf.layers.dense(inputs=dropout1, units=num_classes, name="layer2")
+    dense2 = tf.layers.dense(inputs=dropout1, units=512, name="layer2", activation=tf.nn.relu)
 
     # DropOut - 2
     dropout2 = tf.layers.dropout(
-        inputs=dense2, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
+        inputs=dense2, rate=0.7, training=mode == tf.estimator.ModeKeys.TRAIN)
 
-    # Logits layer
-    # Input Tensor Shape: [batch_size, 1024]
-    # Output Tensor Shape: [batch_size, 10]
+
     logits = tf.layers.dense(inputs=dropout2, units=9)
 
     predictions = {
-        # Generate predictions (for PREDICT and EVAL mode)
         "classes": tf.argmax(input=logits, axis=1),
-        # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
-        # `logging_hook`.
         "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
     }
+
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
     print("Here2")
@@ -151,20 +151,19 @@ def cnn_model_fn(features, labels, mode, params):
 
 # Create the Estimator
 age_classifier = tf.estimator.Estimator(
-      model_fn=cnn_model_fn, model_dir="/tmp/age_mode3")
+      model_fn=cnn_model_fn, model_dir="/tmp/a9")
 
 
-# Set up logging for predictions
+            # Set up logging fo
 # Log the values in the "Softmax" tensor with label "probabilities"
 tensors_to_log = {"probabilities": "softmax_tensor"}
 logging_hook = tf.train.LoggingTensorHook(
-    tensors=tensors_to_log, every_n_iter=50)
+    tensors=tensors_to_log, every_n_iter=1)
 
 count = 0
-while (count < 10000):
-    age_classifier.train(input_fn=train_input_fn, steps=10000)
+while (count < 100):
+    age_classifier.train(input_fn=train_input_fn, steps=1000)
     result = age_classifier.evaluate(input_fn=val_input_fn)
     print(result)
     print("Classification accuracy: {0:.2%}".format(result["accuracy"]))
-    sys.stdout.flush()
     count = count + 1
