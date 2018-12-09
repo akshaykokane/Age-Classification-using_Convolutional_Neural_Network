@@ -34,7 +34,7 @@ def parse_record(record):
 
     return image, label
 
-def input_fn(filenames, train=1, batch_size=32, buffer_size=2048):
+def input_fn(filenames, train, batch_size=32, buffer_size=2048):
    dataset = tf.data.TFRecordDataset(filenames=filenames)
    dataset = dataset.map(parse_record)
    print(dataset)
@@ -59,7 +59,7 @@ def train_input_fn():
     return input_fn(filenames=["train.tfrecords", "test.tfrecords"], train=True)
 
 def val_input_fn():
-    return input_fn(filenames=["val.tfrecords"], train=False)
+    return input_fn(filenames=["visual.tfrecords"], train=False)
 
 
 def cnn_model_fn(features, labels, mode, params):
@@ -67,7 +67,8 @@ def cnn_model_fn(features, labels, mode, params):
     input_layer = tf.reshape(features["image"], [-1, 227, 227, 3])
     num_classes = 9
     #0 - Unknown
-    print("Here1")
+    
+
     #Layer 1
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
@@ -80,6 +81,7 @@ def cnn_model_fn(features, labels, mode, params):
     pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[3, 3], strides=[2,2] ,padding="Valid")
     norm1 = tf.nn.local_response_normalization(pool1, 5, alpha=0.0001, beta=0.75, name='norm1')
     print(norm1)
+
     # Layer 2
     conv2 = tf.layers.conv2d(
         inputs=norm1,
@@ -91,6 +93,7 @@ def cnn_model_fn(features, labels, mode, params):
     pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[3, 3], strides=2, padding="same")
     norm2 = tf.nn.local_response_normalization(pool2, alpha=0.0001, beta=0.75, name='norm2')
     print(norm2)
+
     # Layer 3
     conv3 = tf.layers.conv2d(
         inputs=norm2,
@@ -130,6 +133,7 @@ def cnn_model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
     print("Here2")
+
     # Calculate Loss (for both TRAIN and EVAL modes)
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
@@ -161,9 +165,9 @@ logging_hook = tf.train.LoggingTensorHook(
     tensors=tensors_to_log, every_n_iter=1)
 
 count = 0
-while (count < 100):
+while (count < 1000):
     age_classifier.train(input_fn=train_input_fn, steps=1000)
-    result = age_classifier.evaluate(input_fn=val_input_fn)
+    result = age_classifier.evaluate(input_fn=val_input_fn, hooks=[logging_hook])
     print(result)
     print("Classification accuracy: {0:.2%}".format(result["accuracy"]))
     count = count + 1

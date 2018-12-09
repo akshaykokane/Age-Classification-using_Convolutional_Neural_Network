@@ -3,7 +3,7 @@ import glob
 import sys
 import cv2
 import numpy as np
-#import skimage.io as io
+
 import tensorflow as tf
 
 #age groups having labels to value mapping
@@ -35,15 +35,9 @@ def load_image(addr):
 
 def createDataRecord(out_filename, addrs, labels):
     print(len(addrs))
-    # open the TFRecords file
     writer = tf.python_io.TFRecordWriter(out_filename)
     for i in range(len(addrs)):
 
-        # print how many images are saved every 1000 images
-        if not i % 1000:
-            print('Train data: {}/{}'.format(i, len(addrs)))
-            sys.stdout.flush()
-        # Load the image
         img = load_image(addrs[i])
 
         print(labels[i])
@@ -57,18 +51,22 @@ def createDataRecord(out_filename, addrs, labels):
             'image_raw': _bytes_feature(img.tostring()),
             'label': _int64_feature(label)
         }
+       
         # Create an example protocol buffer
         example = tf.train.Example(features=tf.train.Features(feature=feature))
         if not i % 1000:
          print(example)
+       
         # Serialize to string and write on the file
         writer.write(example.SerializeToString())
 
     writer.close()
-    sys.stdout.flush()
+   
 
 
 face_data = 'C:/Users/akshay1/Desktop/Books/CV Project/dataset_2/aligned/*/*.jpg'
+#face_data = 'C:/Users/akshay1/Desktop/Books/CV Project/landmark_aligned_face.1938.8496685134_bafd8bda68_o.jpg'
+
 # read addresses and labels from the 'train1' folder
 addrs = glob.glob(face_data)
 print(len(addrs))
@@ -96,7 +94,6 @@ for current_file in list_of_files:
 #print(len(file_labels))
 #print(len(file_names))
 
-#labels = ["a" if '20' in addr else 1 for addr in addrs]
 labels = []
 for addr in addrs:
     flag = 0
@@ -125,13 +122,14 @@ shuffle(c)
 addrs, labels = zip(*c)
 
 # Divide the data into 60% train, 20% validation, and 40% test
-train_addrs = addrs[0:int(0.6 * len(addrs))]
-train_labels = labels[0:int(0.6 * len(labels))]
-val_addrs = addrs[int(0.6 * len(addrs)):int(0.8 * len(addrs))]
-val_labels = labels[int(0.6 * len(addrs)):int(0.8 * len(addrs))]
-test_addrs = addrs[int(0.8 * len(addrs)):]
-test_labels = labels[int(0.8 * len(labels)):]
+#train_addrs = addrs[0:int(0.6 * len(addrs))]
+#train_labels = labels[0:int(0.6 * len(labels))]
+#val_addrs = addrs[int(0.6 * len(addrs)):int(0.8 * len(addrs))]
+#val_labels = labels[int(0.6 * len(addrs)):int(0.8 * len(addrs))]
+#test_addrs = addrs[int(0.8 * len(addrs)):]
+#test_labels = labels[int(0.8 * len(labels)):]
 
-createDataRecord('train.tfrecords', train_addrs, train_labels)
-createDataRecord('val.tfrecords', val_addrs, val_labels)
-createDataRecord('test.tfrecords', test_addrs, test_labels)
+#createDataRecord('train.tfrecords', train_addrs, train_labels)
+#createDataRecord('val.tfrecords', val_addrs, val_labels)
+#createDataRecord('test.tfrecords', test_addrs, test_labels)
+createDataRecord('visual.tfrecords', addrs, labels)
