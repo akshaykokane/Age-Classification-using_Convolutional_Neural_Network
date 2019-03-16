@@ -1,4 +1,4 @@
-# Age Detection using Convolutional Neural Network (TensorFlow)
+# Age Classification using Convolutional Neural Network (TensorFlow)
 
 The problem discussed is about the age classification using Convolutional Neural Network (CNN) and improving the existing model and training speed of the model. I am using Adience dataset for training model as it contains variety of images as used by https://talhassner.github.io/home/publication/2015_CVPR. 
 
